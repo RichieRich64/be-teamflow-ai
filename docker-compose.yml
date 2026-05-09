@@ -1,0 +1,48 @@
+version: '3.9'
+
+# Local development environment for TeamFlow AI backend.
+# Starts MongoDB and Redis so you don't need to install them on your machine.
+#
+# Usage:
+#   docker compose up -d        — start in background
+#   docker compose down         — stop and remove containers
+#   docker compose down -v      — stop and delete all data (volumes)
+
+services:
+  mongo:
+    image: mongo:7.0
+    container_name: teamflow_mongo
+    restart: unless-stopped
+    ports:
+      - '27017:27017'
+    environment:
+      MONGO_INITDB_DATABASE: teamflow_dev
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ['CMD', 'mongosh', '--eval', "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: teamflow_redis
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    command: redis-server --save 60 1 --loglevel warning
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  mongo_data:
+    driver: local
+  redis_data:
+    driver: local

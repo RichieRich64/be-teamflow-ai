@@ -1,9 +1,11 @@
-import express, { Application, Request, Response, NextFunction } from 'express';
+import express, { Application, Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import morgan from 'morgan';
 import { env } from '@/config/env';
+import { errorHandler } from '@/middleware/errorHandler';
+import { ApiResponse } from '@/utils/ApiResponse';
 
 export function createApp(): Application {
   const app = express();
@@ -58,23 +60,13 @@ export function createApp(): Application {
 
   // ─── 404 Handler ──────────────────────────────────────────────────────────
   app.use((_req: Request, res: Response) => {
-    res.status(404).json({
-      success: false,
-      message: 'Route not found',
-    });
+    ApiResponse.error(res, 404, 'Route not found');
   });
 
   // ─── Global Error Handler ─────────────────────────────────────────────────
-  // The signature (err, req, res, next) with 4 params is how Express identifies
-  // an error-handling middleware. Must be registered last.
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
-    console.error(err.stack);
-    res.status(500).json({
-      success: false,
-      message: env.isProduction ? 'Internal server error' : err.message,
-    });
-  });
+  // errorHandler must be registered last — Express identifies it as an error
+  // handler because it has exactly 4 parameters (err, req, res, next).
+  app.use(errorHandler);
 
   return app;
 }
